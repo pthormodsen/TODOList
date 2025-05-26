@@ -3,7 +3,7 @@ import java.util.List;
 
 public class TodoList {
 
-    private EntityManagerFactory emf = Persistence.createEntityManagerFactory("todo-pu");
+    private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("todo-pu");
 
     public void addTask(String description) {
         EntityManager em = emf.createEntityManager();
@@ -14,13 +14,12 @@ public class TodoList {
         em.close();
     }
 
-    public void markTaskDone(int index) {
+    public void markTaskDoneById(Long id) {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
 
-        List<Task> tasks = em.createQuery("SELECT t FROM Task t", Task.class).getResultList();
-        if (index >= 0 && index < tasks.size()) {
-            Task task = tasks.get(index);
+        Task task = em.find(Task.class, id);
+        if (task != null && !task.isCompleted()) {
             task.markDone();
             em.merge(task);
         }
@@ -29,23 +28,25 @@ public class TodoList {
         em.close();
     }
 
-    public void removeTask(int index) {
+    public void removeTaskById(Long id) {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
 
-        List<Task> tasks = em.createQuery("SELECT t FROM Task t", Task.class).getResultList();
-        if (index >= 0 && index < tasks.size()) {
-            Task task = tasks.get(index);
-            em.remove(em.contains(task) ? task : em.merge(task));
+        Task task = em.find(Task.class, id);
+        if (task != null) {
+            em.remove(task);
         }
 
         em.getTransaction().commit();
         em.close();
     }
 
+
     public List<Task> getTasks() {
         EntityManager em = emf.createEntityManager();
-        List<Task> tasks = em.createQuery("SELECT t FROM Task t", Task.class).getResultList();
+        List<Task> tasks = em.createQuery(
+                "SELECT t FROM Task t ORDER BY t.completed ASC, LOWER(t.description) ASC", Task.class
+        ).getResultList();
         em.close();
         return tasks;
     }
@@ -54,11 +55,40 @@ public class TodoList {
         return getTasks().size();
     }
 
+
     public Task getTask(int index) {
         List<Task> tasks = getTasks();
         if (index >= 0 && index < tasks.size()) {
             return tasks.get(index);
         }
         return null;
+    }
+
+    public void markTaskUndoneById(Long id) {
+        EntityManager em = emf.createEntityManager();
+        em.getTransaction().begin();
+
+        Task task = em.find(Task.class, id);
+        if (task != null) {
+            task.setCompleted(false);  // Setter completed til false
+            em.merge(task);
+        }
+
+        em.getTransaction().commit();
+        em.close();
+    }
+
+    public void updateTaskDescription(Long id, String newDescription) {
+        EntityManager em = emf.createEntityManager();
+        em.getTransaction().begin();
+
+        Task task = em.find(Task.class, id);
+        if (task != null) {
+            task.setDescription(newDescription);
+            em.merge(task);  // Ikke strengt nødvendig her, men greit å gjøre
+        }
+
+        em.getTransaction().commit();
+        em.close();
     }
 }

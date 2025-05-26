@@ -12,7 +12,6 @@ public class Task {
 
     private boolean completed;
 
-    // Tom konstruktør kreves av JPA
     public Task() {}
 
     public Task(String description) {
@@ -35,8 +34,6 @@ public class Task {
         this.completed = true;
     }
 
-    // Ikke sett id manuelt — JPA setter dette
-
     public String getDescription() {
         return description;
     }
@@ -55,12 +52,12 @@ public class Task {
 
     @Override
     public String toString() {
-        return "Task{" +
-                "id=" + id +
-                ", description='" + description + '\'' +
-                ", completed=" + completed +
-                '}';
+        String status = completed ? "\u2713" : "\u25A1";  // ✓ eller □
+        return String.format("%s  %s", status, description);
     }
+
+
+
 
 
 }
